@@ -1,0 +1,66 @@
+#Ubunntu server installation main.yml
+---
+- hosts: all
+  become: yes
+  tasks:
+
+    - name: Install Update (Ubuntu)
+      tags: always
+      apt:
+        update_cache: yes
+      changed_when: false
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Install docker
+      apt:
+        name: docker.io
+        state: latest
+
+    - name: Enable docker socket
+      service:
+        name: docker
+        state: restarted
+        enabled: yes
+
+    - name: Start docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add user to docker group
+      user:
+        name: ma_localmachine
+        group: docker
+        append: yes
+
+    - name: Restart docker service
+      service:
+        name: docker
+        state: restarted
+
+    - name: Import Dockerfile
+      copy:
+        src: ./Dockerfile
+        dest: /home/ma_localmachine/Dockerfile
+        owner: root
+        mode: '0755'
+
+    - name: Install and build Dockerfile (pull image)
+      docker_image:
+        name: ubuntu/apache2
+        source: pull
+
+    - name: Accessing Containerized Apps
+      docker_container:
+        name: apache2_app
+        image: ubuntu/apache2
+        state: started
+        ports:
+          - "8080:80"
+        detach: yes
+
+    - name: Restart docker service again (optional)
+      service:
+        name: docker
+        state: restarted

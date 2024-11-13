@@ -1,0 +1,47 @@
+#Ubunntu server installation main.yml
+---
+- name: Install docker
+  apt:
+    name: docker.io
+    state: latest
+
+- name: Enable docker socket
+  service:
+    name: docker
+    state: restarted
+    enabled:
+
+- name: Start docker service 
+  service:
+    name: docker
+    state: started
+    enabled:
+
+- name: Add docker to group
+  command: sudo usermod -aG docker ma_localmachine
+
+- name: Restart docker
+  command: sudo systemctl restart
+
+- name: Import Dockerfiles
+  copy: 
+    src: ./Dockerfile
+    dest: /home/ma_localmachine
+    owner: root
+    mode: '0755'
+
+- name: Install and build Dockerfile
+  shell:
+    docker pull ubuntu/apache2
+
+- name: Accessing Containerized Apps
+  shell:
+    docker run -it -d -p 8080:80 ubuntu/apache2
+  
+- name: Restart docker
+  command: sudo systemctl restart
+
+- name: Restart docker service
+  service:
+    name: docker
+    state: restarted
